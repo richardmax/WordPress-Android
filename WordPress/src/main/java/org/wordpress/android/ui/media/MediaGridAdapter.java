@@ -110,9 +110,9 @@ public class MediaGridAdapter extends RecyclerView.Adapter<MediaGridAdapter.Grid
     }
 
     public void setMediaList(@NonNull List<MediaModel> mediaList) {
-        // TODO: remove logging
-        AppLog.w(AppLog.T.MEDIA, "MediaGridAdapter > same list = " + isSameList(mediaList));
-        if (!isSameList(mediaList)) {
+        boolean isSame = isSameList(mediaList);
+        AppLog.w(AppLog.T.MEDIA, "MediaGridAdapter > same list = " + isSame);
+        if (!isSame) {
             mMediaList.clear();
             mMediaList.addAll(mediaList);
             notifyDataSetChanged();
