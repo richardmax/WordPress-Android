@@ -76,6 +76,7 @@ import org.wordpress.android.util.SiteUtils;
 import org.wordpress.android.util.ToastUtils;
 import org.wordpress.android.widgets.WPNetworkImageView;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ import static org.wordpress.android.ui.posts.EditPostActivity.EXTRA_POST_LOCAL_I
 import static org.wordpress.android.ui.posts.SelectCategoriesActivity.KEY_SELECTED_CATEGORY_IDS;
 
 public class EditPostSettingsFragment extends Fragment {
+    private static final String EXTRA_POST_SETTINGS_VIEW_MODEL = "postSettingsViewModel";
     private static final String POST_FORMAT_STANDARD_KEY = "standard";
 
     private static final int ACTIVITY_REQUEST_CODE_SELECT_CATEGORIES = 5;
@@ -142,21 +144,27 @@ public class EditPostSettingsFragment extends Fragment {
         ((WordPress) getActivity().getApplicationContext()).component().inject(this);
         mDispatcher.register(this);
 
-        updatePostFormatKeysAndNames();
-        fetchSiteSettingsAndUpdateDefaultPostFormat();
-
         if (savedInstanceState == null) {
             mPostSettings = new PostSettingsViewModel();
-            if (getArguments() != null) {
-                mPostSettings.site = (SiteModel) getArguments().getSerializable(WordPress.SITE);
-            }
+            mPostSettings.site = (SiteModel) getArguments().getSerializable(WordPress.SITE);
+        } else {
+            mPostSettings = (PostSettingsViewModel) savedInstanceState.getSerializable(EXTRA_POST_SETTINGS_VIEW_MODEL);
         }
+
+        updatePostFormatKeysAndNames();
+        fetchSiteSettingsAndUpdateDefaultPostFormat();
 
         // Update post formats and categories, in case anything changed.
         mDispatcher.dispatch(SiteActionBuilder.newFetchPostFormatsAction(mPostSettings.site));
         if (!getPost().isPage()) {
             mDispatcher.dispatch(TaxonomyActionBuilder.newFetchCategoriesAction(mPostSettings.site));
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable(EXTRA_POST_SETTINGS_VIEW_MODEL, mPostSettings);
     }
 
     // This is temporary
@@ -1041,7 +1049,7 @@ public class EditPostSettingsFragment extends Fragment {
         popupMenu.show();
     }
 
-    private class PostSettingsViewModel {
-        private SiteModel site;
+    private static class PostSettingsViewModel implements Serializable {
+        SiteModel site;
     }
 }
