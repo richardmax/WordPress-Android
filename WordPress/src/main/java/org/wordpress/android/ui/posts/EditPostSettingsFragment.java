@@ -104,6 +104,7 @@ public class EditPostSettingsFragment extends Fragment {
 
     private EditPostActivityHook mEditPostActivityHook;
     private SiteSettingsInterface mSiteSettings;
+    private PostSettingsViewModel mPostSettings;
 
     private TextView mExcerptTextView;
     private TextView mSlugTextView;
@@ -145,17 +146,19 @@ public class EditPostSettingsFragment extends Fragment {
         updatePostFormatKeysAndNames();
         fetchSiteSettingsAndUpdateDefaultPostFormat();
 
+        mPostSettings = new PostSettingsViewModel();
+
         // Update post formats and categories, in case anything changed.
-        SiteModel siteModel = getSite();
-        mDispatcher.dispatch(SiteActionBuilder.newFetchPostFormatsAction(siteModel));
+        mPostSettings.site = getSite();
+        mDispatcher.dispatch(SiteActionBuilder.newFetchPostFormatsAction(mPostSettings.site));
         if (!getPost().isPage()) {
-            mDispatcher.dispatch(TaxonomyActionBuilder.newFetchCategoriesAction(siteModel));
+            mDispatcher.dispatch(TaxonomyActionBuilder.newFetchCategoriesAction(mPostSettings.site));
         }
     }
 
     private void fetchSiteSettingsAndUpdateDefaultPostFormat() {
         // we need to fetch site settings in order to get the latest default post format
-        mSiteSettings = SiteSettingsInterface.getInterface(getActivity(), getSite(),
+        mSiteSettings = SiteSettingsInterface.getInterface(getActivity(), mPostSettings.site,
                 new SiteSettingsListener() {
                     @Override
                     public void onSettingsUpdated(Exception error) {
@@ -447,7 +450,7 @@ public class EditPostSettingsFragment extends Fragment {
             return;
         }
         Intent categoriesIntent = new Intent(getActivity(), SelectCategoriesActivity.class);
-        categoriesIntent.putExtra(WordPress.SITE, getSite());
+        categoriesIntent.putExtra(WordPress.SITE, mPostSettings.site);
         categoriesIntent.putExtra(EXTRA_POST_LOCAL_ID, getPost().getId());
         startActivityForResult(categoriesIntent, ACTIVITY_REQUEST_CODE_SELECT_CATEGORIES);
     }
@@ -457,11 +460,10 @@ public class EditPostSettingsFragment extends Fragment {
             return;
         }
         // Fetch/refresh the tags in preparation for the PostSettingsTagsActivity
-        SiteModel siteModel = getSite();
-        mDispatcher.dispatch(TaxonomyActionBuilder.newFetchTagsAction(siteModel));
+        mDispatcher.dispatch(TaxonomyActionBuilder.newFetchTagsAction(mPostSettings.site));
 
         Intent tagsIntent = new Intent(getActivity(), PostSettingsTagsActivity.class);
-        tagsIntent.putExtra(WordPress.SITE, siteModel);
+        tagsIntent.putExtra(WordPress.SITE, mPostSettings.site);
         String tags = TextUtils.join(",", getPost().getTagNameList());
         tagsIntent.putExtra(PostSettingsTagsActivity.KEY_TAGS, tags);
         startActivityForResult(tagsIntent, ACTIVITY_REQUEST_CODE_SELECT_TAGS);
@@ -715,7 +717,7 @@ public class EditPostSettingsFragment extends Fragment {
     }
 
     private void updateCategoriesTextView() {
-        List<TermModel> categories = mTaxonomyStore.getCategoriesForPost(getPost(), getSite());
+        List<TermModel> categories = mTaxonomyStore.getCategoriesForPost(getPost(), mPostSettings.site);
         StringBuilder sb = new StringBuilder();
         Iterator<TermModel> it = categories.iterator();
         if (it.hasNext()) {
@@ -766,17 +768,13 @@ public class EditPostSettingsFragment extends Fragment {
         if (getActivity() == null) {
             return;
         }
-        if (getSite() == null) {
-            AppLog.e(T.POSTS, "Current site shouldn't be null while updating post format keys & names");
-            return;
-        }
         // Default values
         mPostFormatKeys = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.post_format_keys)));
         mPostFormatNames = new ArrayList<>(Arrays.asList(getResources()
                 .getStringArray(R.array.post_format_display_names)));
 
         // If we have specific values for this site, use them
-        List<PostFormatModel> postFormatModels = mSiteStore.getPostFormats(getSite());
+        List<PostFormatModel> postFormatModels = mSiteStore.getPostFormats(mPostSettings.site);
         for (PostFormatModel postFormatModel : postFormatModels) {
             if (!mPostFormatKeys.contains(postFormatModel.getSlug())) {
                 mPostFormatKeys.add(postFormatModel.getSlug());
@@ -836,8 +834,7 @@ public class EditPostSettingsFragment extends Fragment {
             return;
         }
 
-        SiteModel siteModel = getSite();
-        MediaModel media = mMediaStore.getSiteMediaWithId(siteModel, postModel.getFeaturedImageId());
+        MediaModel media = mMediaStore.getSiteMediaWithId(mPostSettings.site, postModel.getFeaturedImageId());
         if (media == null) {
             return;
         }
@@ -851,7 +848,7 @@ public class EditPostSettingsFragment extends Fragment {
         int size = Math.max(width, height);
 
         String mediaUri = media.getThumbnailUrl();
-        if (SiteUtils.isPhotonCapable(siteModel)) {
+        if (SiteUtils.isPhotonCapable(mPostSettings.site)) {
             mediaUri = PhotonUtils.getPhotonImageUrl(mediaUri, size, 0);
         }
 
@@ -863,7 +860,7 @@ public class EditPostSettingsFragment extends Fragment {
             return;
         }
         Intent intent = new Intent(getActivity(), MediaBrowserActivity.class);
-        intent.putExtra(WordPress.SITE, getSite());
+        intent.putExtra(WordPress.SITE, mPostSettings.site);
         intent.putExtra(MediaBrowserActivity.ARG_BROWSER_TYPE, MediaBrowserType.SINGLE_SELECT_PICKER);
         intent.putExtra(MediaBrowserActivity.ARG_IMAGES_ONLY, true);
         startActivityForResult(intent, RequestCodes.SINGLE_SELECT_MEDIA_PICKER);
@@ -1059,5 +1056,9 @@ public class EditPostSettingsFragment extends Fragment {
             // no op, icons won't show
         }
         popupMenu.show();
+    }
+
+    private class PostSettingsViewModel {
+        private SiteModel site;
     }
 }
