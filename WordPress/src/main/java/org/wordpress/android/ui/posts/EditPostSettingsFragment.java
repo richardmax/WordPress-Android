@@ -1,6 +1,5 @@
 package org.wordpress.android.ui.posts;
 
-import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Fragment;
 import android.app.TimePickerDialog;
@@ -88,6 +87,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import static android.app.Activity.RESULT_OK;
+import static org.wordpress.android.ui.posts.EditPostActivity.EXTRA_IS_PAGE;
 import static org.wordpress.android.ui.posts.EditPostActivity.EXTRA_POST_LOCAL_ID;
 import static org.wordpress.android.ui.posts.SelectCategoriesActivity.KEY_SELECTED_CATEGORY_IDS;
 
@@ -102,7 +102,6 @@ public class EditPostSettingsFragment extends Fragment {
     private static final int SELECT_LIBRARY_MENU_POSITION = 100;
     private static final int CLEAR_FEATURED_IMAGE_MENU_POSITION = 101;
 
-    private EditPostActivityHook mEditPostActivityHook;
     private SiteSettingsInterface mSiteSettings;
     private PostSettingsViewModel mPostSettings;
 
@@ -128,13 +127,13 @@ public class EditPostSettingsFragment extends Fragment {
     @Inject TaxonomyStore mTaxonomyStore;
     @Inject Dispatcher mDispatcher;
 
-    interface EditPostActivityHook {
-        PostModel getPost();
-        SiteModel getSite();
-    }
-
-    public static EditPostSettingsFragment newInstance() {
-        return new EditPostSettingsFragment();
+    public static EditPostSettingsFragment newInstance(SiteModel site, boolean isPage) {
+        EditPostSettingsFragment fragment = new EditPostSettingsFragment();
+        Bundle args = new Bundle();
+        args.putSerializable(WordPress.SITE, site);
+        args.putBoolean(EXTRA_IS_PAGE, isPage);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -146,14 +145,23 @@ public class EditPostSettingsFragment extends Fragment {
         updatePostFormatKeysAndNames();
         fetchSiteSettingsAndUpdateDefaultPostFormat();
 
-        mPostSettings = new PostSettingsViewModel();
+        if (savedInstanceState == null) {
+            mPostSettings = new PostSettingsViewModel();
+            if (getArguments() != null) {
+                mPostSettings.site = (SiteModel) getArguments().getSerializable(WordPress.SITE);
+            }
+        }
 
         // Update post formats and categories, in case anything changed.
-        mPostSettings.site = getSite();
         mDispatcher.dispatch(SiteActionBuilder.newFetchPostFormatsAction(mPostSettings.site));
         if (!getPost().isPage()) {
             mDispatcher.dispatch(TaxonomyActionBuilder.newFetchCategoriesAction(mPostSettings.site));
         }
+    }
+
+    // This is temporary
+    private PostModel getPost() {
+        return new PostModel();
     }
 
     private void fetchSiteSettingsAndUpdateDefaultPostFormat() {
@@ -181,23 +189,6 @@ public class EditPostSettingsFragment extends Fragment {
             // init will fetch remote settings for us
             mSiteSettings.init(true);
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        if (activity instanceof EditPostActivityHook) {
-            mEditPostActivityHook = (EditPostActivityHook) activity;
-        } else {
-            throw new RuntimeException(activity.toString() + " must implement PostSettingsListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mEditPostActivityHook = null;
     }
 
     @Override
@@ -601,14 +592,6 @@ public class EditPostSettingsFragment extends Fragment {
     }
 
     // Helpers
-
-    private PostModel getPost() {
-        return mEditPostActivityHook.getPost();
-    }
-
-    private SiteModel getSite() {
-        return mEditPostActivityHook.getSite();
-    }
 
     private void updateSaveButton() {
         if (isAdded()) {

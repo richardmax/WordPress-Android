@@ -151,8 +151,7 @@ public class EditPostActivity extends AppCompatActivity implements
         EditorFragmentListener,
         EditorWebViewCompatibility.ReflectionFailureListener,
         OnRequestPermissionsResultCallback,
-        PhotoPickerFragment.PhotoPickerListener,
-        EditPostSettingsFragment.EditPostActivityHook {
+        PhotoPickerFragment.PhotoPickerListener {
 
     public static final String EXTRA_POST_LOCAL_ID = "postModelLocalId";
     public static final String EXTRA_IS_PAGE = "isPage";
@@ -1282,7 +1281,7 @@ public class EditPostActivity extends AppCompatActivity implements
                         return new LegacyEditorFragment();
                     }
                 case 1:
-                    return EditPostSettingsFragment.newInstance();
+                    return EditPostSettingsFragment.newInstance(mSite, mIsPage);
                 default:
                     return EditPostPreviewFragment.newInstance(mSite);
             }
@@ -2451,17 +2450,5 @@ public class EditPostActivity extends AppCompatActivity implements
                     )
                     .show();
         }
-    }
-
-    // EditPostActivityHook methods
-
-    @Override
-    public PostModel getPost() {
-        return mPost;
-    }
-
-    @Override
-    public SiteModel getSite() {
-        return mSite;
     }
 }
