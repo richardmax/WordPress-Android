@@ -147,6 +147,7 @@ public class EditPostSettingsFragment extends Fragment {
         if (savedInstanceState == null) {
             mPostSettings = new PostSettingsViewModel();
             mPostSettings.site = (SiteModel) getArguments().getSerializable(WordPress.SITE);
+            mPostSettings.isPage = getArguments().getBoolean(EXTRA_IS_PAGE);
         } else {
             mPostSettings = (PostSettingsViewModel) savedInstanceState.getSerializable(EXTRA_POST_SETTINGS_VIEW_MODEL);
         }
@@ -156,7 +157,7 @@ public class EditPostSettingsFragment extends Fragment {
 
         // Update post formats and categories, in case anything changed.
         mDispatcher.dispatch(SiteActionBuilder.newFetchPostFormatsAction(mPostSettings.site));
-        if (!getPost().isPage()) {
+        if (!mPostSettings.isPage) {
             mDispatcher.dispatch(TaxonomyActionBuilder.newFetchCategoriesAction(mPostSettings.site));
         }
     }
@@ -317,7 +318,7 @@ public class EditPostSettingsFragment extends Fragment {
             }
         });
 
-        if (getPost().isPage()) { // remove post specific views
+        if (mPostSettings.isPage) { // remove post specific views
             excerptContainer.setVisibility(View.GONE);
             categoriesContainer.setVisibility(View.GONE);
             tagsContainer.setVisibility(View.GONE);
@@ -1051,5 +1052,6 @@ public class EditPostSettingsFragment extends Fragment {
 
     private static class PostSettingsViewModel implements Serializable {
         SiteModel site;
+        boolean isPage;
     }
 }
