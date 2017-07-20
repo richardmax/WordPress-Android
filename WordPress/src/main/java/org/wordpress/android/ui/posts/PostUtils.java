@@ -285,8 +285,8 @@ public class PostUtils {
         return list;
     }
 
-    static boolean shouldPublishImmediately(String postStatus, String dateCreated) {
-        if (!shouldPublishImmediatelyOptionBeAvailable(postStatus, dateCreated)) {
+    static boolean shouldPublishImmediately(PostStatus postStatus, String dateCreated) {
+        if (!shouldPublishImmediatelyOptionBeAvailable(postStatus)) {
             return false;
         }
         Date pubDate = DateTimeUtils.dateFromIso8601(dateCreated);
@@ -296,15 +296,12 @@ public class PostUtils {
     }
 
     // Only drafts should have the option to publish immediately to avoid user confusion
-    static boolean shouldPublishImmediatelyOptionBeAvailable(String postStatus, String dateCreated) {
-        PostModel postModel = new PostModel();
-        postModel.setStatus(postStatus);
-        postModel.setDateCreated(dateCreated);
-        return PostStatus.fromPost(postModel) == PostStatus.DRAFT;
+    static boolean shouldPublishImmediatelyOptionBeAvailable(PostStatus postStatus) {
+        return postStatus == PostStatus.DRAFT;
     }
 
     static void updatePublishDateIfShouldBePublishedImmediately(PostModel postModel) {
-        if (shouldPublishImmediately(postModel.getStatus(), postModel.getDateCreated())) {
+        if (shouldPublishImmediately(PostStatus.fromPost(postModel), postModel.getDateCreated())) {
             postModel.setDateCreated(DateTimeUtils.iso8601FromDate(new Date()));
         }
     }

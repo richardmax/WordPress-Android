@@ -479,7 +479,7 @@ public class EditPostSettingsFragment extends Fragment {
             public void onClick(DialogInterface dialog, int which) {
                 ListView listView = ((AlertDialog)dialog).getListView();
                 int index = listView.getCheckedItemPosition();
-                updatePostStatus(getPostStatusAtIndex(index).toString());
+                updatePostStatus(getPostStatusAtIndex(index));
             }
         });
         builder.setNegativeButton(R.string.cancel, null);
@@ -544,7 +544,7 @@ public class EditPostSettingsFragment extends Fragment {
 
         Resources resources = getResources();
         boolean isPublishImmediatelyAvailable = PostUtils
-                .shouldPublishImmediatelyOptionBeAvailable(mPostSettings.status, mPostSettings.dateCreated);
+                .shouldPublishImmediatelyOptionBeAvailable(mPostSettings.status);
 
         final DatePickerDialog datePickerDialog = new DatePickerDialog(getActivity(), null, year, month, day);
         datePickerDialog.setTitle(R.string.select_date);
@@ -631,7 +631,7 @@ public class EditPostSettingsFragment extends Fragment {
         updateCategoriesTextView();
     }
 
-    private void updatePostStatus(String postStatus) {
+    private void updatePostStatus(PostStatus postStatus) {
         mPostSettings.status = postStatus;
         updatePostStatusRelatedViews();
         updateSaveButton();
@@ -736,7 +736,7 @@ public class EditPostSettingsFragment extends Fragment {
     }
 
     private int getCurrentPostStatusIndex() {
-        switch (PostStatus.fromPost(getPost())) {
+        switch (mPostSettings.status) {
             case DRAFT:
                 return 1;
             case PENDING:
@@ -1050,7 +1050,7 @@ public class EditPostSettingsFragment extends Fragment {
         String excerpt;
         String slug;
         String password;
-        String status;
+        PostStatus status;
         String dateCreated;
         long featuredImageId;
         List<String> tagNameList;
