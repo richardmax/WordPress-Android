@@ -543,7 +543,8 @@ public class EditPostSettingsFragment extends Fragment {
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
         Resources resources = getResources();
-        boolean isPublishImmediatelyAvailable = PostUtils.shouldPublishImmediatelyOptionBeAvailable(getPost());
+        boolean isPublishImmediatelyAvailable = PostUtils
+                .shouldPublishImmediatelyOptionBeAvailable(mPostSettings.status, mPostSettings.dateCreated);
 
         final DatePickerDialog datePickerDialog = new DatePickerDialog(getActivity(), null, year, month, day);
         datePickerDialog.setTitle(R.string.select_date);
@@ -693,15 +694,12 @@ public class EditPostSettingsFragment extends Fragment {
         if (!isAdded()) {
             return;
         }
-        PostModel postModel = getPost();
-        if (PostUtils.shouldPublishImmediately(postModel)) {
+        if (PostUtils.shouldPublishImmediately(mPostSettings.status, mPostSettings.dateCreated)) {
             mPublishDateTextView.setText(R.string.immediately);
-        } else {
-            if (!TextUtils.isEmpty(mPostSettings.dateCreated)){
-                String formattedDate = DateUtils.formatDateTime(getActivity(),
-                        DateTimeUtils.timestampFromIso8601Millis(mPostSettings.dateCreated), getDateTimeFlags());
-                mPublishDateTextView.setText(formattedDate);
-            }
+        } else if (!TextUtils.isEmpty(mPostSettings.dateCreated)){
+            String formattedDate = DateUtils.formatDateTime(getActivity(),
+                    DateTimeUtils.timestampFromIso8601Millis(mPostSettings.dateCreated), getDateTimeFlags());
+            mPublishDateTextView.setText(formattedDate);
         }
     }
 
@@ -856,8 +854,7 @@ public class EditPostSettingsFragment extends Fragment {
     // Publish Date Helpers
 
     private Calendar getCurrentPublishDateAsCalendar() {
-        PostModel postModel = getPost();
-        if (PostUtils.shouldPublishImmediately(postModel)) {
+        if (PostUtils.shouldPublishImmediately(mPostSettings.status, mPostSettings.dateCreated)) {
             return Calendar.getInstance();
         }
         Calendar calendar = Calendar.getInstance();

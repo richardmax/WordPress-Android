@@ -285,23 +285,26 @@ public class PostUtils {
         return list;
     }
 
-    static boolean shouldPublishImmediately(PostModel postModel) {
-        if (!shouldPublishImmediatelyOptionBeAvailable(postModel)) {
+    static boolean shouldPublishImmediately(String postStatus, String dateCreated) {
+        if (!shouldPublishImmediatelyOptionBeAvailable(postStatus, dateCreated)) {
             return false;
         }
-        Date pubDate = DateTimeUtils.dateFromIso8601(postModel.getDateCreated());
+        Date pubDate = DateTimeUtils.dateFromIso8601(dateCreated);
         Date now = new Date();
         // Publish immediately for posts that don't have any date set yet and drafts with publish dates in the past
         return pubDate == null || !pubDate.after(now);
     }
 
     // Only drafts should have the option to publish immediately to avoid user confusion
-    static boolean shouldPublishImmediatelyOptionBeAvailable(PostModel postModel) {
+    static boolean shouldPublishImmediatelyOptionBeAvailable(String postStatus, String dateCreated) {
+        PostModel postModel = new PostModel();
+        postModel.setStatus(postStatus);
+        postModel.setDateCreated(dateCreated);
         return PostStatus.fromPost(postModel) == PostStatus.DRAFT;
     }
 
     static void updatePublishDateIfShouldBePublishedImmediately(PostModel postModel) {
-        if (shouldPublishImmediately(postModel)) {
+        if (shouldPublishImmediately(postModel.getStatus(), postModel.getDateCreated())) {
             postModel.setDateCreated(DateTimeUtils.iso8601FromDate(new Date()));
         }
     }
