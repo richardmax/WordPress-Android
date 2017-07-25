@@ -1180,7 +1180,8 @@ public class EditPostActivity extends AppCompatActivity implements
                         isPublishable && hasLocalChanges;
 
                 // if post was modified or has unpublished local changes, save it
-                boolean shouldSave = hasChanges || hasUnpublishedLocalDraftChanges;
+                boolean shouldSave = (mOriginalPost != null && hasChanges)
+                        || hasUnpublishedLocalDraftChanges || (isPublishable && isNewPost());
                 // if post is publishable or not new, sync it
                 boolean shouldSync = isPublishable || !isNewPost();
 
@@ -1630,10 +1631,10 @@ public class EditPostActivity extends AppCompatActivity implements
             content = postContent.toString();
         }
 
-        mPost.setTitle(title);
-        mPost.setContent(content);
+        boolean titleChanged = PostUtils.updatePostTitleIfDifferent(mPost, title);
+        boolean contentChanged = PostUtils.updatePostContentIfDifferent(mPost, content);
 
-        if (!mPost.isLocalDraft()) {
+        if (!mPost.isLocalDraft() && (titleChanged || contentChanged)) {
             mPost.setIsLocallyChanged(true);
         }
     }
@@ -1650,14 +1651,13 @@ public class EditPostActivity extends AppCompatActivity implements
             // TODO: Shortcode handling, media handling
         }
 
-        mPost.setTitle(title);
-        mPost.setContent(content);
+        boolean titleChanged = PostUtils.updatePostTitleIfDifferent(mPost, title);
+        boolean contentChanged = PostUtils.updatePostContentIfDifferent(mPost, content);
 
-        if (!mPost.isLocalDraft()) {
+        if (!mPost.isLocalDraft() && (titleChanged || contentChanged)) {
             mPost.setIsLocallyChanged(true);
+            mPost.setDateLocallyChanged(DateTimeUtils.iso8601FromTimestamp(System.currentTimeMillis() / 1000));
         }
-
-        mPost.setDateLocallyChanged(DateTimeUtils.iso8601FromTimestamp(System.currentTimeMillis() / 1000));
     }
 
     private void updateMediaFileOnServer(MediaFile mediaFile) {
