@@ -1181,7 +1181,8 @@ public class EditPostActivity extends AppCompatActivity implements
 
                 // if post was modified or has unpublished local changes, save it
                 boolean shouldSave = (mOriginalPost != null && hasChanges)
-                        || hasUnpublishedLocalDraftChanges || (isPublishable && isNewPost());
+                        || hasUnpublishedLocalDraftChanges || (isPublishable && isNewPost())
+                        || UploadService.hasPendingOrInProgressMediaUploadsForPost(mPost);
                 // if post is publishable or not new, sync it
                 boolean shouldSync = isPublishable || !isNewPost();
 
@@ -1202,8 +1203,10 @@ public class EditPostActivity extends AppCompatActivity implements
                         }
                     }
 
-                    if (PostStatus.fromPost(mPost) == PostStatus.DRAFT && isPublishable && !hasFailedMedia()
-                            && NetworkUtils.isNetworkAvailable(getBaseContext())) {
+                    if (PostStatus.fromPost(mPost) == PostStatus.DRAFT ||
+                            PostStatus.fromPost(mPost) == PostStatus.PUBLISHED
+                                    && isPublishable && !hasFailedMedia()
+                                        && NetworkUtils.isNetworkAvailable(getBaseContext())) {
                         savePostOnlineAndFinishAsync(isFirstTimePublish);
                     } else {
                         savePostLocallyAndFinishAsync();
